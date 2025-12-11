@@ -1,3 +1,5 @@
+"use client";
+
 import {
   CalendarDays,
   Clock8,
@@ -8,8 +10,12 @@ import {
   User,
   MailOpen,
 } from "lucide-react";
+import { useState } from "react";
+import QuotesCard from "../../../components/quotes/QuotesCard";
 
 const page = () => {
+  const [showCard, setShowCard] = useState(false);
+
   return (
     <section className="bg-white rounded-2xl shadow-lg min-h-[91vh] py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
       <div className="w-full">
@@ -38,56 +44,71 @@ const page = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <a className="inline-flex items-center gap-2 bg-[#ddffff] px-3 py-1 rounded-lg font-bold text-slate-800 text-lg sm:text-xl hover:opacity-90">
-                <NotepadText className="w-6 h-6" />
-                <span>All Quotes</span>
-              </a>
+          {/* new div */}
+          <div className="flex flex-col ">
+            <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between h-15">
+              <div className="flex flex-wrap items-center gap-3 h-full ">
+                <a className="inline-flex items-center gap-2 bg-[#00b2a9] px-3 py-1 rounded-t-xl font-bold text-slate-800 text-lg sm:text-xl  h-full ">
+                  <NotepadText className="w-6 h-6" />
+                  <span>All Quotes</span>
+                </a>
 
-              <a
-                href="/admin/jobs"
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800"
-              >
-                <div className="relative w-6 h-6">
-                  <User className="w-6 h-6 text-slate-800" />
+                <a
+                  href="/admin/jobs"
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 h-full"
+                >
+                  <div className="relative w-6 h-6">
+                    <User className="w-6 h-6 text-slate-800" />
 
-                  <MailOpen className="w-3 h-3 text-slate-800 absolute -bottom-1 -right-1" />
+                    <MailOpen className="w-3 h-3 text-slate-800 absolute -bottom-1 -right-1" />
+                  </div>
+
+                  <span className="font-bold text-slate-800 text-lg sm:text-xl">
+                    All Jobs
+                  </span>
+                </a>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div className="relative w-full sm:w-52">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search"
+                    className="w-full bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:border-gray-400"
+                  />
                 </div>
+                <div className="relative w-full sm:w-44">
+                  <Funnel className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
 
-                <span className="font-bold text-slate-800 text-lg sm:text-xl">
-                  All Jobs
-                </span>
-              </a>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="relative w-full sm:w-52">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="w-full bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:border-gray-400"
-                />
+                  <select className=" w-full border border-gray-300 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:border-gray-400">
+                    <option value="">Filter by Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <button
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-lg text-sm cursor-pointer"
+                  onClick={() => {
+                    setShowCard(true);
+                  }}
+                >
+                  <CirclePlus className="w-4 h-4" />
+                  <span>Add Quotes</span>
+                </button>
               </div>
-              <div className="relative w-full sm:w-44">
-                <Funnel className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-
-                <select className=" w-full border border-gray-300 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:border-gray-400">
-                  <option value="">Filter by Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-lg text-sm cursor-pointer">
-                <CirclePlus className="w-4 h-4" />
-                <span>Add Quotes</span>
-              </button>
             </div>
+            <hr className="border-gray-300 border-1 " />
           </div>
         </div>
 
-        <hr className="mt-4 border-gray-300" />
+        {showCard && (
+          <QuotesCard
+            setShow={setShowCard}
+            show={showCard}
+            className="transition-discrete"
+          />
+        )}
 
         <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-md rounded-xl  mt-4">
           <table class="w-full text-sm text-left rtl:text-right text-body">
