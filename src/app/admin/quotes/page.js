@@ -46,16 +46,16 @@ const page = () => {
           </div>
           {/* new div */}
           <div className="flex flex-col ">
-            <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between h-15">
+            <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between lg:h-15">
               <div className="flex flex-wrap items-center gap-3 h-full ">
-                <a className="inline-flex items-center gap-2 bg-[#00b2a9] px-3 py-1 rounded-t-xl font-bold text-slate-800 text-lg sm:text-xl  h-full ">
+                <a className="inline-flex items-center gap-2 bg-[#00b2a9] px-3 py-1 rounded-t-xl font-bold text-slate-800 text-lg sm:text-xl  lg:h-full ">
                   <NotepadText className="w-6 h-6" />
                   <span>All Quotes</span>
                 </a>
 
                 <a
                   href="/admin/jobs"
-                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 h-full"
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 lg:h-full"
                 >
                   <div className="relative w-6 h-6">
                     <User className="w-6 h-6 text-slate-800" />

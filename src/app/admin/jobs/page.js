@@ -17,7 +17,7 @@ const page = () => {
   return (
     <section className="bg-white rounded-2xl shadow-lg min-h-[91vh] py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
       <div className="w-full">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col  gap-4">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div className="w-full lg:w-1/2">
               <h2 className="text-slate-800 text-xl sm:text-2xl font-bold">
@@ -43,9 +43,9 @@ const page = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col ">
-            <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between h-15">
-              <div className="flex flex-wrap items-center gap-3 h-full">
+          <div className="flex flex-col  ">
+            <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between lg:h-15">
+              <div className="flex flex-wrap items-center gap-3 lg:h-full">
                 <a
                   href="/admin/quotes"
                   className="inline-flex items-center gap-2  rounded-lg font-bold text-slate-800 text-lg sm:text-xl hover:opacity-90"
@@ -56,7 +56,7 @@ const page = () => {
 
                 <a
                   href="/admin/jobs"
-                  className="flex items-center  gap-2 text-sm text-gray-600 hover:text-gray-800 bg-[#00b2a9] px-3 py-1 rounded-t-xl h-full"
+                  className="flex items-center  gap-2 text-sm text-gray-600 hover:text-gray-800 bg-[#00b2a9] px-3 py-1 rounded-t-xl lg:h-full"
                 >
                   <div className="relative w-6 h-6">
                     <User className="w-6 h-6 text-slate-800" />
