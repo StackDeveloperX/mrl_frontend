@@ -1,3 +1,4 @@
+// src/components/dialogs/FormModal.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,7 +7,8 @@ export type FormField = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "email" | "password" | "tel";
+  type?: "text" | "email" | "password" | "tel" | "select";
+  options?: { label: string; value: string }[]; // for select
 };
 
 type FormValues = Record<string, string>;
@@ -16,11 +18,10 @@ type FormModalProps = {
   title: string;
   fields: FormField[];
   onClose: () => void;
-  onSubmit: (values: FormValues) => void | Promise<void>;
+  onSubmit: (values: FormValues) => void;
   submitLabel?: string;
   cancelLabel?: string;
   errorText?: string | null;
-  initialValues?: FormValues; // ✅ for Edit mode
 };
 
 export function FormModal({
@@ -32,19 +33,23 @@ export function FormModal({
   submitLabel = "Save",
   cancelLabel = "Cancel",
   errorText,
-  initialValues,
 }: FormModalProps) {
   const [values, setValues] = useState<FormValues>({});
 
   useEffect(() => {
-    if (!open) return;
-
-    const initial: FormValues = {};
-    fields.forEach((f) => {
-      initial[f.name] = initialValues?.[f.name] ?? "";
-    });
-    setValues(initial);
-  }, [open, fields, initialValues]);
+    if (open) {
+      const initial: FormValues = {};
+      fields.forEach((f) => {
+        // default select to first option if available
+        if (f.type === "select" && f.options?.length) {
+          initial[f.name] = f.options[0].value;
+        } else {
+          initial[f.name] = "";
+        }
+      });
+      setValues(initial);
+    }
+  }, [open, fields]);
 
   if (!open) return null;
 
@@ -52,46 +57,57 @@ export function FormModal({
     setValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(values);
+    onSubmit(values);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-3xl overflow-hidden rounded-[24px] bg-white shadow-xl">
-        {/* Header */}
         <div className="bg-[#DFFAF7] px-8 py-4">
           <h2 className="text-lg font-semibold text-[#1A2B4C]">{title}</h2>
         </div>
 
-        {/* Body */}
         <form onSubmit={handleSubmit} className="px-8 py-6">
+          {errorText ? (
+            <div className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm font-medium text-red-600">
+              {errorText}
+            </div>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-2">
             {fields.map((field) => (
               <div key={field.name} className="space-y-1.5 text-sm">
                 <label className="block text-xs font-medium text-[#1A2B4C]">
                   {field.label}
                 </label>
-                <input
-                  type={field.type ?? "text"}
-                  value={values[field.name] ?? ""}
-                  onChange={(e) => handleChange(field.name, e.target.value)}
-                  placeholder={field.placeholder}
-                  className="h-10 w-full rounded-[16px] border border-[#E5E7EB] bg-white px-3 text-sm outline-none placeholder:text-[#9CA3AF]"
-                />
+
+                {field.type === "select" ? (
+                  <select
+                    value={values[field.name] ?? ""}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    className="h-10 w-full rounded-[16px] border border-[#E5E7EB] bg-white px-3 text-sm outline-none"
+                  >
+                    {(field.options ?? []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={field.type ?? "text"}
+                    value={values[field.name] ?? ""}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="h-10 w-full rounded-[16px] border border-[#E5E7EB] bg-white px-3 text-sm outline-none placeholder:text-[#9CA3AF]"
+                  />
+                )}
               </div>
             ))}
           </div>
 
-          {/* Error */}
-          {errorText ? (
-            <div className="mt-4 text-center text-sm font-medium text-red-500">
-              {errorText}
-            </div>
-          ) : null}
-
-          {/* Actions */}
           <div className="mt-8 flex items-center justify-center gap-4">
             <button
               type="button"
@@ -100,6 +116,7 @@ export function FormModal({
             >
               {cancelLabel}
             </button>
+
             <button
               type="submit"
               className="h-10 min-w-[120px] rounded-[8px] bg-[#1A2B4C] px-6 text-sm font-semibold text-white hover:bg-[#0f1c33]"

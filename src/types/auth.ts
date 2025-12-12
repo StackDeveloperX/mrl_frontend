@@ -1,36 +1,29 @@
 // src/types/auth.ts
 
-export interface LoginRequest {
-    email: string;
-    password: string;
-}
-
-export interface LoginResponse {
-    token: string;         // JWT
-    refresh_token?: string;
-    user: AuthUser;
-}
+export type UserType = "employee" | "client";
 
 export interface AuthUser {
-    id: number;
-    email: string;
-    first_name: string;
-    last_name: string;
-    user_type: "employee" | "client";
-    status: "active" | "inactive" | "pending";
-    roles?: {
-        id: number;
-        name: string;
-    }[];
-    [key: string]: any; // extra fields from backend
+  id: number;
+  email: string;
+  first_name: string;
+  last_name?: string;
+  user_type: UserType;
+  status: "active" | "inactive";
 }
 
-export interface ForgotPasswordRequest {
-    email: string;
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
-export interface ResetPasswordRequest {
-    token: string;
-    password: string;
-    confirm_password: string;
+// login returns token + user (as per your updated yaml)
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+// refresh returns token + user (yaml shows token + user)
+export interface RefreshResponse {
+  token: string;
+  user: AuthUser;
 }

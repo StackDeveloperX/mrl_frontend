@@ -1,6 +1,7 @@
+// src/app/dashboard/settings/page.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import {
   User,
@@ -15,15 +16,17 @@ import {
   Filter,
   Plus,
   Loader2,
-  Pencil,
 } from "lucide-react";
+
 import {
   InnerSidebar,
   type InnerSidebarIconItem,
   type InnerSidebarPillItem,
 } from "@/components/layout/InnerSidebar";
+
 import { FormModal, type FormField } from "@/components/dialogs/FormModal";
-import { usersApi, type User as ApiUser } from "@/apis/usersApi";
+import { employeesApi } from "@/apis/employeesApi";
+import { clientsApi } from "@/apis/clientsApi";
 
 type MainSection = "userManagement" | "billings" | "branches" | "profile";
 type UserSubTab = "user" | "role" | "permission" | "groups" | "staff";
@@ -36,40 +39,6 @@ type SettingsNavId =
   | "billings"
   | "branches"
   | "profile";
-
-/* ---------- Modal fields ---------- */
-
-const addUserFields: FormField[] = [
-  { name: "firstName", label: "First Name", placeholder: "Enter First Name" },
-  { name: "lastName", label: "Last Name", placeholder: "Enter Last Name" },
-  { name: "email", label: "Email Address", placeholder: "Email Address", type: "email" },
-];
-
-const editUserFields: FormField[] = [
-  { name: "firstName", label: "First Name", placeholder: "Enter First Name" },
-  { name: "lastName", label: "Last Name", placeholder: "Enter Last Name" },
-  { name: "email", label: "Email Address", placeholder: "Email Address", type: "email" },
-  { name: "status", label: "Status (active/inactive/pending)", placeholder: "active" },
-  { name: "userType", label: "User Type (employee/client)", placeholder: "employee" },
-];
-
-/* ---------- Sidebar config ---------- */
-
-const iconItems: InnerSidebarIconItem[] = [
-  { id: "user", label: "User", icon: User },
-  { id: "roles", label: "Roles", icon: Shield },
-  { id: "permission", label: "Permission", icon: KeyRound },
-  { id: "groups", label: "Group", icon: UsersIcon },
-  { id: "staff", label: "Staff", icon: UserCog },
-];
-
-const pillItems: InnerSidebarPillItem[] = [
-  { id: "billings", label: "Billings", icon: CreditCard },
-  { id: "branches", label: "Branches", icon: MapPinHouse },
-  { id: "profile", label: "Profile", icon: IdCard },
-];
-
-/* ---------- Right-panel config ---------- */
 
 type PanelConfig = {
   id: UserSubTab;
@@ -87,7 +56,7 @@ const USER_PANEL_CONFIGS: PanelConfig[] = [
     tabLabel: "User",
     icon: User,
     addLabel: "Add Users",
-    columns: ["User ID", "Email", "User Name", "User Type", "Created at", "Updated at", "Status"],
+    columns: ["ID", "Email", "Name", "Type", "Status"],
   },
   {
     id: "role",
@@ -95,7 +64,7 @@ const USER_PANEL_CONFIGS: PanelConfig[] = [
     tabLabel: "Role",
     icon: Shield,
     addLabel: "Add Roles",
-    columns: ["Role ID", "Role Name", "Role Description", "User Type", "Created at", "Updated at", "Status"],
+    columns: ["Role ID", "Role Name", "Status"],
   },
   {
     id: "permission",
@@ -103,7 +72,7 @@ const USER_PANEL_CONFIGS: PanelConfig[] = [
     tabLabel: "Permissions",
     icon: KeyRound,
     addLabel: "Add Permissions",
-    columns: ["Permission ID", "Permission Name", "Permission Description", "Permission Key", "Module", "Created at", "Updated at"],
+    columns: ["Permission ID", "Name", "Key", "Module"],
   },
   {
     id: "groups",
@@ -111,7 +80,7 @@ const USER_PANEL_CONFIGS: PanelConfig[] = [
     tabLabel: "Groups",
     icon: UsersIcon,
     addLabel: "Add Groups",
-    columns: ["Group ID", "Group Name", "Group Description", "Created at", "Updated at", "Status"],
+    columns: ["Group ID", "Group Name", "Status"],
   },
   {
     id: "staff",
@@ -119,25 +88,69 @@ const USER_PANEL_CONFIGS: PanelConfig[] = [
     tabLabel: "Staff",
     icon: UserCog,
     addLabel: "Add Staff",
-    columns: ["Staff ID", "Staff Name", "Color", "Mobile No.", "Email Id", "Status"],
+    columns: ["Staff ID", "Staff Name", "Email", "Status"],
   },
+];
+
+const iconItems: InnerSidebarIconItem[] = [
+  { id: "user", label: "User", icon: User },
+  { id: "roles", label: "Roles", icon: Shield },
+  { id: "permission", label: "Permission", icon: KeyRound },
+  { id: "groups", label: "Group", icon: UsersIcon },
+  { id: "staff", label: "Staff", icon: UserCog },
+];
+
+const pillItems: InnerSidebarPillItem[] = [
+  { id: "billings", label: "Billings", icon: CreditCard },
+  { id: "branches", label: "Branches", icon: MapPinHouse },
+  { id: "profile", label: "Profile", icon: IdCard },
+];
+
+// ✅ Add User modal fields (now includes userType select)
+const addUserFields: FormField[] = [
+  {
+    name: "userType",
+    label: "User Type",
+    type: "select",
+    options: [
+      { label: "Employee", value: "employee" },
+      { label: "Client", value: "client" },
+    ],
+  },
+  { name: "firstName", label: "First Name", placeholder: "Enter First Name" },
+  { name: "lastName", label: "Last Name", placeholder: "Enter Last Name" },
+  { name: "phone", label: "Phone", placeholder: "Phone", type: "tel" },
+  { name: "email", label: "Email", placeholder: "Email", type: "email" },
+  { name: "password", label: "Password", placeholder: "Min 8 chars", type: "password" },
+  { name: "confirmPassword", label: "Confirm Password", placeholder: "Confirm", type: "password" },
+
+  // Client-only extras (optional)
+  { name: "companyName", label: "Company Name (Client)", placeholder: "Company Name" },
+  { name: "contactPerson", label: "Contact Person (Client)", placeholder: "Contact Person" },
+  { name: "address", label: "Address (Client)", placeholder: "Address" },
+  { name: "city", label: "City (Client)", placeholder: "City" },
+  { name: "state", label: "State (Client)", placeholder: "State" },
+  { name: "postcode", label: "Postcode (Client)", placeholder: "Postcode" },
+
+  // Employee-only extras (optional)
+  { name: "position", label: "Position (Employee)", placeholder: "Position" },
+  { name: "department", label: "Department (Employee)", placeholder: "Department" },
+  { name: "hireDate", label: "Hire Date (Employee)", placeholder: "YYYY-MM-DD" },
 ];
 
 export default function SettingsPage() {
   const [mainSection, setMainSection] = useState<MainSection>("userManagement");
   const [userSubTab, setUserSubTab] = useState<UserSubTab>("user");
   const [activeNavId, setActiveNavId] = useState<SettingsNavId>("user");
-
-  // Add modal
   const [showAddUser, setShowAddUser] = useState(false);
+
   const [isSavingUser, setIsSavingUser] = useState(false);
   const [userError, setUserError] = useState<string | null>(null);
 
-  // Edit modal (get + update)
-  const [showEditUser, setShowEditUser] = useState(false);
-  const [editUserId, setEditUserId] = useState<string>(""); // input id for now
-  const [editingUser, setEditingUser] = useState<ApiUser | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(false);
+  // simple list demo (employees/clients based on selected filter)
+  const [userListType, setUserListType] = useState<"employee" | "client">("employee");
+  const [rows, setRows] = useState<any[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
 
   const activePanel =
     USER_PANEL_CONFIGS.find((cfg) => cfg.id === userSubTab) ?? USER_PANEL_CONFIGS[0];
@@ -180,33 +193,31 @@ export default function SettingsPage() {
   };
 
   const handleClickAdd = () => {
-    if (userSubTab === "user") {
-      setUserError(null);
-      setShowAddUser(true);
-    } else {
-      console.log("Click add for", userSubTab);
-    }
+    if (userSubTab === "user") setShowAddUser(true);
+    else console.log("Click add for", userSubTab);
   };
 
-  const openEditUser = async () => {
-    if (!editUserId) {
-      setUserError("Enter a User ID to load.");
-      return;
-    }
+  // ✅ list users (employees or clients)
+  useEffect(() => {
+    if (mainSection !== "userManagement" || userSubTab !== "user") return;
 
-    try {
-      setUserError(null);
-      setIsLoadingUser(true);
-
-      const user = await usersApi.getById(editUserId);
-      setEditingUser(user);
-      setShowEditUser(true);
-    } catch (err: any) {
-      setUserError(err?.response?.data?.message || "Failed to load user.");
-    } finally {
-      setIsLoadingUser(false);
-    }
-  };
+    (async () => {
+      try {
+        setLoadingList(true);
+        if (userListType === "employee") {
+          const data = await employeesApi.list();
+          setRows(data);
+        } else {
+          const data = await clientsApi.list();
+          setRows(data);
+        }
+      } catch (e) {
+        setRows([]);
+      } finally {
+        setLoadingList(false);
+      }
+    })();
+  }, [mainSection, userSubTab, userListType]);
 
   return (
     <AppShell>
@@ -223,9 +234,7 @@ export default function SettingsPage() {
         <div className="flex min-h-[520px] flex-1 flex-col rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
           <div className="border-b border-[#E5E7EB] px-6 pt-4 pb-3">
             {mainSection === "userManagement" && (
-              <h2 className="mb-3 text-lg font-semibold text-[#1A2B4C]">
-                {activePanel.title}
-              </h2>
+              <h2 className="mb-3 text-lg font-semibold text-[#1A2B4C]">{activePanel.title}</h2>
             )}
 
             <div className="flex items-center justify-between gap-4">
@@ -254,6 +263,18 @@ export default function SettingsPage() {
               )}
 
               <div className="flex flex-wrap items-center gap-2">
+                {/* ✅ simple list type toggle only on User tab */}
+                {mainSection === "userManagement" && userSubTab === "user" && (
+                  <select
+                    value={userListType}
+                    onChange={(e) => setUserListType(e.target.value as any)}
+                    className="h-10 rounded-md border border-[#E5E7EB] bg-white px-3 text-sm"
+                  >
+                    <option value="employee">Employees</option>
+                    <option value="client">Clients</option>
+                  </select>
+                )}
+
                 <div className="flex h-10 w-64 items-center gap-2 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 text-sm">
                   <Search className="h-4 w-4 text-[#9CA3AF]" />
                   <input
@@ -266,33 +287,6 @@ export default function SettingsPage() {
                   <Filter className="h-4 w-4" />
                   <span>Filter</span>
                 </button>
-
-                {/* Simple "Edit User" test button for get+update flow */}
-                {userSubTab === "user" && (
-                  <div className="flex h-10 items-center gap-2 rounded-md border border-[#E5E7EB] bg-white px-3">
-                    <input
-                      value={editUserId}
-                      onChange={(e) => setEditUserId(e.target.value)}
-                      placeholder="User ID"
-                      className="h-full w-24 bg-transparent text-sm outline-none placeholder:text-[#9CA3AF]"
-                    />
-                    <button
-                      onClick={openEditUser}
-                      className="flex items-center gap-2 text-sm font-medium text-[#1A2B4C] hover:underline"
-                      disabled={isLoadingUser}
-                    >
-                      {isLoadingUser ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" /> Loading
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          <Pencil className="h-4 w-4" /> Edit
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                )}
 
                 <button
                   onClick={handleClickAdd}
@@ -315,27 +309,44 @@ export default function SettingsPage() {
                 {activePanel.columns.map((col, index) => (
                   <div
                     key={col}
-                    className={
-                      index === activePanel.columns.length - 1
-                        ? "w-24 text-right"
-                        : "flex-1"
-                    }
+                    className={index === activePanel.columns.length - 1 ? "w-24 text-right" : "flex-1"}
                   >
                     {col}
                   </div>
                 ))}
               </div>
 
-              <div className="flex h-[260px] flex-col items-center justify-center gap-2 text-sm text-[#9CA3AF]">
-                <div>No data found. Use “{activePanel.addLabel}” to create one.</div>
-                {userError ? <div className="text-red-500">{userError}</div> : null}
-              </div>
+              {loadingList ? (
+                <div className="flex h-[260px] items-center justify-center text-sm text-[#6B7280]">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="flex h-[260px] items-center justify-center text-sm text-[#9CA3AF]">
+                  No data found. Use “{activePanel.addLabel}” to create one.
+                </div>
+              ) : (
+                <div className="divide-y divide-[#E5E7EB]">
+                  {rows.slice(0, 15).map((r: any) => (
+                    <div key={r.id} className="flex items-center px-4 py-2 text-sm text-[#111827]">
+                      <div className="w-8">
+                        <input type="checkbox" className="h-4 w-4" />
+                      </div>
+
+                      <div className="flex-1">{r.id}</div>
+                      <div className="flex-1">{r.email ?? "-"}</div>
+                      <div className="flex-1">{`${r.first_name ?? ""} ${r.last_name ?? ""}`.trim()}</div>
+                      <div className="flex-1">{userListType}</div>
+                      <div className="w-24 text-right">{String(r.is_active ?? r.status ?? "-")}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add User (POST /users) */}
       <FormModal
         open={showAddUser}
         title="Add New User"
@@ -352,84 +363,78 @@ export default function SettingsPage() {
         onSubmit={async (values) => {
           setUserError(null);
 
-          if (!values.firstName || !values.email) {
-            setUserError("First name and email are required.");
+          const userType = (values.userType as "employee" | "client") ?? "employee";
+
+          // Required fields for both employee/client create: email, first_name, password
+          if (!values.firstName?.trim()) {
+            setUserError("First name is required.");
+            return;
+          }
+          if (!values.email?.trim()) {
+            setUserError("Email is required.");
+            return;
+          }
+          if (!values.password || values.password.length < 8) {
+            setUserError("Password must be at least 8 characters.");
+            return;
+          }
+          if (values.password !== values.confirmPassword) {
+            setUserError("Password and Confirm Password do not match.");
             return;
           }
 
           try {
             setIsSavingUser(true);
 
-            await usersApi.create({
-              first_name: values.firstName,
-              last_name: values.lastName,
-              email: values.email,
-              user_type: "employee",
-              status: "active",
-            });
+            if (userType === "employee") {
+              await employeesApi.create({
+                email: values.email.trim(),
+                first_name: values.firstName.trim(),
+                last_name: values.lastName?.trim() || undefined,
+                password: values.password,
+
+                phone: values.phone?.trim() || undefined,
+                position: values.position?.trim() || undefined,
+                department: values.department?.trim() || undefined,
+                hire_date: values.hireDate?.trim() || undefined,
+              });
+              setUserListType("employee");
+            } else {
+              await clientsApi.create({
+                email: values.email.trim(),
+                first_name: values.firstName.trim(),
+                last_name: values.lastName?.trim() || undefined,
+                password: values.password,
+
+                phone: values.phone?.trim() || undefined,
+                company_name: values.companyName?.trim() || undefined,
+                contact_person: values.contactPerson?.trim() || undefined,
+                address: values.address?.trim() || undefined,
+                city: values.city?.trim() || undefined,
+                state: values.state?.trim() || undefined,
+                postcode: values.postcode?.trim() || undefined,
+              });
+              setUserListType("client");
+            }
 
             setShowAddUser(false);
-          } catch (err: any) {
-            setUserError(err?.response?.data?.message || "Failed to create user.");
-          } finally {
-            setIsSavingUser(false);
-          }
-        }}
-      />
-
-      {/* Edit User (GET /users/{id} then PUT /users/{id}) */}
-      <FormModal
-        open={showEditUser}
-        title={`Edit User${editingUser ? ` #${editingUser.id}` : ""}`}
-        fields={editUserFields}
-        cancelLabel="Cancel"
-        submitLabel="Update"
-        errorText={userError}
-        initialValues={
-          editingUser
-            ? {
-                firstName: editingUser.first_name ?? "",
-                lastName: editingUser.last_name ?? "",
-                email: editingUser.email ?? "",
-                status: editingUser.status ?? "active",
-                userType: editingUser.user_type ?? "employee",
-              }
-            : undefined
-        }
-        onClose={() => {
-          if (!isSavingUser) {
             setUserError(null);
-            setShowEditUser(false);
-            setEditingUser(null);
-          }
-        }}
-        onSubmit={async (values) => {
-          if (!editingUser) return;
 
-          setUserError(null);
-
-          try {
-            setIsSavingUser(true);
-
-            await usersApi.update(editingUser.id, {
-              first_name: values.firstName,
-              last_name: values.lastName,
-              // email is usually not updateable; if your backend allows it, add it in UserUpdate DTO
-              status: (values.status as any) || "active",
-              user_type: (values.userType as any) || "employee",
-            });
-
-            setShowEditUser(false);
-            setEditingUser(null);
+            // refresh list
+            if (userType === "employee") setRows(await employeesApi.list());
+            else setRows(await clientsApi.list());
           } catch (err: any) {
-            setUserError(err?.response?.data?.message || "Failed to update user.");
+            setUserError(
+              err?.response?.data?.message ||
+                err?.message ||
+                "Failed to create user. Please try again."
+            );
           } finally {
             setIsSavingUser(false);
           }
         }}
       />
 
-      {/* Global loading overlay */}
       {isSavingUser && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30">
           <div className="flex items-center gap-3 rounded-md bg-white px-5 py-3 shadow-lg">

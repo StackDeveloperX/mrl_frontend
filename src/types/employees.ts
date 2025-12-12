@@ -3,34 +3,52 @@
 export interface Employee {
     id: number;
     user_id: number;
-    employee_number: string;
-    position?: string;
-    branch_id?: number;
-    first_name: string;
-    last_name: string;
+    employee_number?: string;
+  
     email: string;
-    phone?: string;
-    is_active: boolean;
-    // add other fields from the OpenAPI if you need them
-    [key: string]: any;
-}
-
-export interface EmployeeCreate {
     first_name: string;
-    last_name: string;
-    email: string;
-    phone?: string;
-    branch_id?: number;
+    last_name?: string;
+  
     position?: string;
-    // plus any extra fields your OpenAPI requires
-}
-
-export interface EmployeeUpdate {
+    department?: string;
+    hire_date?: string; // yyyy-mm-dd
+    phone?: string;
+  
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
+  
+    notes?: string;
+    is_active?: boolean;
+  
+    created_at?: string;
+    updated_at?: string;
+  }
+  
+  export interface EmployeeCreate {
+    email: string;
+    first_name: string;
+    password: string;
+  
+    last_name?: string;
+    position?: string;
+    department?: string;
+    hire_date?: string; // yyyy-mm-dd
+    phone?: string;
+  }
+  
+  export interface EmployeeUpdate {
     first_name?: string;
     last_name?: string;
-    email?: string;
-    phone?: string;
-    branch_id?: number;
+  
     position?: string;
+    department?: string;
+    hire_date?: string; // yyyy-mm-dd
+    phone?: string;
+  
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
+  
+    notes?: string;
     is_active?: boolean;
-}
+  }
+  
