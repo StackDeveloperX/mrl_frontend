@@ -16,14 +16,14 @@ export interface LoginRequest {
   password: string;
 }
 
-// login returns token + user (as per your updated yaml)
 export interface LoginResponse {
   token: string;
+  refresh_token: string;
   user: AuthUser;
 }
 
-// refresh returns token + user (yaml shows token + user)
 export interface RefreshResponse {
   token: string;
+  refresh_token: string;
   user: AuthUser;
 }

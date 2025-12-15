@@ -1,19 +1,23 @@
-// src/apis/authApi.ts
-import { apiClient, setAuthToken } from "@/lib/apiClient";
+import { apiClient, setTokens } from "@/lib/apiClient";
 import { API_ROUTES } from "@/lib/apiRoutes";
 import type { LoginRequest, LoginResponse, RefreshResponse, AuthUser } from "@/types/auth";
 
 export const authApi = {
   async login(payload: LoginRequest): Promise<LoginResponse> {
     const res = await apiClient.post<LoginResponse>(API_ROUTES.auth.login, payload);
-    setAuthToken(res.data.token);
+
+    // Save access + refresh token
+    setTokens(res.data.token, res.data.refresh_token);
+
     return res.data;
   },
 
-  // ✅ refresh endpoint: POST /auth/refresh (no body, uses Bearer token)
   async refresh(): Promise<RefreshResponse> {
     const res = await apiClient.post<RefreshResponse>(API_ROUTES.auth.refresh);
-    setAuthToken(res.data.token);
+
+    // Save new access token
+    setTokens(res.data.token, res.data.refresh_token ?? undefined);
+
     return res.data;
   },
 
@@ -23,6 +27,6 @@ export const authApi = {
   },
 
   logout() {
-    setAuthToken(undefined);
+    setTokens(undefined);
   },
 };

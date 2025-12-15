@@ -114,7 +114,7 @@ const addUserFields: FormField[] = [
     type: "select",
     options: [
       { label: "Employee", value: "employee" },
-      { label: "Client", value: "client" },
+      { label: "Customer", value: "customer" },
     ],
   },
   { name: "firstName", label: "First Name", placeholder: "Enter First Name" },
@@ -124,13 +124,13 @@ const addUserFields: FormField[] = [
   { name: "password", label: "Password", placeholder: "Min 8 chars", type: "password" },
   { name: "confirmPassword", label: "Confirm Password", placeholder: "Confirm", type: "password" },
 
-  // Client-only extras (optional)
-  { name: "companyName", label: "Company Name (Client)", placeholder: "Company Name" },
-  { name: "contactPerson", label: "Contact Person (Client)", placeholder: "Contact Person" },
-  { name: "address", label: "Address (Client)", placeholder: "Address" },
-  { name: "city", label: "City (Client)", placeholder: "City" },
-  { name: "state", label: "State (Client)", placeholder: "State" },
-  { name: "postcode", label: "Postcode (Client)", placeholder: "Postcode" },
+  // Customer-only extras (optional)
+  { name: "companyName", label: "Company Name (Customer)", placeholder: "Company Name" },
+  { name: "contactPerson", label: "Contact Person (Customer)", placeholder: "Contact Person" },
+  { name: "address", label: "Address (Customer)", placeholder: "Address" },
+  { name: "city", label: "City (Customer)", placeholder: "City" },
+  { name: "state", label: "State (Customer)", placeholder: "State" },
+  { name: "postcode", label: "Postcode (Customer)", placeholder: "Postcode" },
 
   // Employee-only extras (optional)
   { name: "position", label: "Position (Employee)", placeholder: "Position" },
@@ -147,8 +147,8 @@ export default function SettingsPage() {
   const [isSavingUser, setIsSavingUser] = useState(false);
   const [userError, setUserError] = useState<string | null>(null);
 
-  // simple list demo (employees/clients based on selected filter)
-  const [userListType, setUserListType] = useState<"employee" | "client">("employee");
+  // simple list demo (employees/customer based on selected filter)
+  const [userListType, setUserListType] = useState<"employee" | "customer">("employee");
   const [rows, setRows] = useState<any[]>([]);
   const [loadingList, setLoadingList] = useState(false);
 
@@ -197,7 +197,7 @@ export default function SettingsPage() {
     else console.log("Click add for", userSubTab);
   };
 
-  // ✅ list users (employees or clients)
+  // ✅ list users (employees or customer)
   useEffect(() => {
     if (mainSection !== "userManagement" || userSubTab !== "user") return;
 
@@ -206,10 +206,12 @@ export default function SettingsPage() {
         setLoadingList(true);
         if (userListType === "employee") {
           const data = await employeesApi.list();
-          setRows(data);
+         setRows(data?.data ?? []);  // Ensure that `data.data` is used to get the array
+
         } else {
           const data = await clientsApi.list();
-          setRows(data);
+          setRows(data?.data ?? []);  // Ensure that `data.data` is used to get the array
+
         }
       } catch (e) {
         setRows([]);
@@ -237,7 +239,7 @@ export default function SettingsPage() {
               <h2 className="mb-3 text-lg font-semibold text-[#1A2B4C]">{activePanel.title}</h2>
             )}
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-3">
               {mainSection === "userManagement" && (
                 <div className="flex flex-wrap gap-2 text-sm">
                   {USER_PANEL_CONFIGS.map((cfg) => (
@@ -262,7 +264,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 {/* ✅ simple list type toggle only on User tab */}
                 {mainSection === "userManagement" && userSubTab === "user" && (
                   <select
@@ -271,7 +273,7 @@ export default function SettingsPage() {
                     className="h-10 rounded-md border border-[#E5E7EB] bg-white px-3 text-sm"
                   >
                     <option value="employee">Employees</option>
-                    <option value="client">Clients</option>
+                    <option value="customer">Customer</option>
                   </select>
                 )}
 
@@ -363,9 +365,9 @@ export default function SettingsPage() {
         onSubmit={async (values) => {
           setUserError(null);
 
-          const userType = (values.userType as "employee" | "client") ?? "employee";
+          const userType = (values.userType as "employee" | "customer") ?? "employee";
 
-          // Required fields for both employee/client create: email, first_name, password
+          // Required fields for both employee/customer create: email, first_name, password
           if (!values.firstName?.trim()) {
             setUserError("First name is required.");
             return;
@@ -414,15 +416,21 @@ export default function SettingsPage() {
                 state: values.state?.trim() || undefined,
                 postcode: values.postcode?.trim() || undefined,
               });
-              setUserListType("client");
+              setUserListType("customer");
             }
 
             setShowAddUser(false);
             setUserError(null);
 
             // refresh list
-            if (userType === "employee") setRows(await employeesApi.list());
-            else setRows(await clientsApi.list());
+            if (userType === "employee") {
+              const result = await employeesApi.list();
+setRows(result.data);}
+            else{
+              const result = await clientsApi.list();
+setRows(result.data);
+
+            }
           } catch (err: any) {
             setUserError(
               err?.response?.data?.message ||

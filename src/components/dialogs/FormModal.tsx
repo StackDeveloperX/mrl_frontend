@@ -69,7 +69,8 @@ export function FormModal({
           <h2 className="text-lg font-semibold text-[#1A2B4C]">{title}</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-8 py-6">
+        {/* Scrollable content area */}
+        <form onSubmit={handleSubmit} className="px-8 py-6 max-h-[80vh] overflow-y-auto">
           {errorText ? (
             <div className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm font-medium text-red-600">
               {errorText}
