@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Phone, Lock, Loader2 } from "lucide-react";
 import { authApi } from "@/apis/authApi";
+import axios from "axios";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function LoginPage() {
     setError(null);
 
     if (!mobileOrEmail || !password) {
-      setError("Please enter your mobile/email and password.");
+      console.log(setError("Please enter your mobile/email and password."));
       return;
     }
 
@@ -42,6 +43,8 @@ export default function LoginPage() {
         err?.message ||
         "Login failed. Please check your credentials.";
       setError(message);
+      console.log("Login error:", err?.response?.data?.message);
+      console.log("Login error:", err?.message);
     } finally {
       setIsLoading(false);
     }
@@ -215,12 +218,6 @@ export default function LoginPage() {
     </div>
   );
 }
-
-
-
-
-
-
 
 // "use client";
 

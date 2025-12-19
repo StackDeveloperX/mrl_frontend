@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Search } from "lucide-react";
-export default function QuotesCard({ show, setShow }) {
+export default function QuotesCard({ show, setShow, quotes }) {
   const [mounted, setMounted] = useState(false); // actually mounted in DOM
   const [visible, setVisible] = useState(false); // controls enter/exit animation
   const overlayRef = useRef(null);
@@ -15,7 +15,7 @@ export default function QuotesCard({ show, setShow }) {
       setMounted(true);
       requestAnimationFrame(() => setVisible(true));
       setTimeout(() => focusFirst(), 50);
-      document.body.style.overflow = "hidden"; // prevent background scroll
+      document.body.style.overflow = "hidden";
     } else if (mounted) {
       setVisible(false);
       document.body.style.overflow = "";
@@ -86,17 +86,16 @@ export default function QuotesCard({ show, setShow }) {
     >
       {/* dim background */}
       <div className="absolute inset-0  backdrop" />
-
-      {/* Card container: slide-up animation using translate-y + opacity */}
       <section
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-hidden={!visible}
         aria-label="Create Quotes"
         tabIndex={-1}
-        className={`relative z-50  transition-transform duration-300 ease-out
-          rounded-2xl bg-gray-50 shadow-xl 
-          ${visible ? "animate-slide-up" : "translate-y-8 opacity-0"}
+        className={`relative z-50 rounded-2xl bg-gray-50 shadow-xl
+          ${visible && "animate-slide-up"}
+          ${!visible && mounted && "animate-slide-down"}
         `}
         style={{ maxHeight: "92vh", overflow: "auto" }}
         onMouseDown={(e) => e.stopPropagation()}
@@ -106,18 +105,16 @@ export default function QuotesCard({ show, setShow }) {
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-0 ">
               <div className="w-full lg:w-1/2 ">
                 <h2 className="text-slate-800 text-xl sm:text-2xl font-bold">
-                  Add Quotes
+                  {quotes}
                 </h2>
               </div>
 
               <button
                 aria-label="Close create quotes"
-                className="font-bold cursor-pointer text-slate-600 hover:text-slate-800 transition-colors text-xl sm:text-2xl"
+                className="font-bold cursor-pointer text-slate-600 hover:text-slate-800  text-xl sm:text-2xl transition-transform"
                 onClick={() => setShow(false)}
               >
-                <span>
-                  <X className="w-6 h-6" />
-                </span>
+                <X className="w-6 h-6" />
               </button>
             </div>
           </div>

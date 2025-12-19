@@ -1,13 +1,23 @@
-import { apiClient, setTokens } from "@/lib/apiClient";
+import { apiClient, setTokens, getTokens } from "@/lib/apiClient";
 import { API_ROUTES } from "@/lib/apiRoutes";
-import type { LoginRequest, LoginResponse, RefreshResponse, AuthUser } from "@/types/auth";
+import type {
+  LoginRequest,
+  LoginResponse,
+  RefreshResponse,
+  AuthUser,
+} from "@/types/auth";
 
 export const authApi = {
   async login(payload: LoginRequest): Promise<LoginResponse> {
-    const res = await apiClient.post<LoginResponse>(API_ROUTES.auth.login, payload);
+    const res = await apiClient.post<LoginResponse>(
+      API_ROUTES.auth.login,
+      payload
+    );
 
     // Save access + refresh token
     setTokens(res.data.token, res.data.refresh_token);
+    console.log("login response:", res.data);
+    console.log("stored tokens:", getTokens());
 
     return res.data;
   },

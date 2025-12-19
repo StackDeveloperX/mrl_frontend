@@ -15,7 +15,7 @@ import {
 
 const menu = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: BriefcaseBusiness },
+  { href: "/admin/jobs", label: "Jobs", icon: BriefcaseBusiness },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/invoices", label: "Invoices", icon: ClipboardList },
