@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getTokens } from "../../lib/apiClient";
 import axios from "axios";
+import { Loader2 } from "lucide-react";
 
 const AllJobs = () => {
   const token = getTokens().access;
@@ -55,11 +56,11 @@ const AllJobs = () => {
         <tbody>
           {loading ? (
             <tr className="bg-neutral-primary-soft hover:bg-neutral-secondary-medium">
-              <td
-                className="px-6 py-4 font-medium whitespace-nowrap text-center"
-                colSpan="6"
-              >
-                Loading...
+              <td colSpan={6} className="px-6 py-6 text-center">
+                <div className="flex items-center justify-center gap-2 text-sm font-medium text-neutral-700">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading...</span>
+                </div>
               </td>
             </tr>
           ) : error ? (

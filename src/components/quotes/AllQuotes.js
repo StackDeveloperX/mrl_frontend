@@ -1,14 +1,14 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { getTokens } from "../../lib/apiClient";
-import { File, SendHorizontal } from "lucide-react";
+import { File, Loader2, SendHorizontal } from "lucide-react";
 
 const AllQuotes = () => {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const token = getTokens().access;
-  console.log("token", token);
+  //console.log("token", token);
   const fetchQuotes = async () => {
     setError(null);
     setLoading(true);
@@ -50,11 +50,11 @@ const AllQuotes = () => {
         <tbody>
           {loading ? (
             <tr className="bg-neutral-primary-soft hover:bg-neutral-secondary-medium">
-              <td
-                className="px-6 py-4 font-medium whitespace-nowrap text-center"
-                colSpan="6"
-              >
-                Loading...
+              <td colSpan={6} className="px-6 py-6 text-center">
+                <div className="flex items-center justify-center gap-2 text-sm font-medium text-neutral-700">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading...</span>
+                </div>
               </td>
             </tr>
           ) : error ? (

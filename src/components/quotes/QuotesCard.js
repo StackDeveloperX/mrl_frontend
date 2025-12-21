@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Search } from "lucide-react";
+import axios from "axios";
+import { getTokens } from "../../lib/apiClient";
 export default function QuotesCard({ show, setShow, quotes }) {
   const [mounted, setMounted] = useState(false); // actually mounted in DOM
   const [visible, setVisible] = useState(false); // controls enter/exit animation
@@ -75,6 +77,59 @@ export default function QuotesCard({ show, setShow, quotes }) {
       first.focus();
     }
   }
+
+  const token = getTokens().access;
+  const handleCreateQuote = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post(
+        "http://abc.mrl.local/api/v1/quotes",
+        {
+          client_id: 1,
+          branch_id: 1,
+          service_package_id: 1,
+          title: "House Relocation Quote",
+          description: "2-bedroom apartment move within Sydney",
+          service_type: "general",
+          service_data: {
+            pickup_unit: "Unit 5",
+            pickup_street_address: "George Street",
+            pickup_suburb: "Sydney",
+            pickup_state: "NSW",
+            pickup_postal_code: "2000",
+            pickup_instructions: "Please call 15 minutes before arrival",
+            dropoff_unit: "Apartment 18",
+            dropoff_street_address: "Oxford Street",
+            dropoff_suburb: "Bondi Junction",
+            dropoff_state: "NSW",
+            dropoff_postal_code: "2022",
+          },
+          assigned_to: 1,
+          tax_rate: 10,
+          discount_amount: 0,
+          valid_until: "2025-12-31",
+          internal_notes: "Handle fragile items carefully",
+          client_notes: "Customer prefers morning pickup",
+        },
+
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Quote created:", response.data);
+      setShow(false);
+    } catch (err) {
+      console.error(
+        "Error creating quote:",
+        err.response?.data?.message || err.message
+      );
+    }
+  };
 
   return (
     <div
@@ -372,7 +427,10 @@ export default function QuotesCard({ show, setShow, quotes }) {
                 <button className="order-2 sm:order-1 border border-gray-400 rounded-lg px-6 py-3 sm:py-2 bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base text-slate-800 font-semibold">
                   Save as Draft
                 </button>
-                <button className="order-1 sm:order-2 px-6 py-3 sm:py-2 bg-[#1A2B4C] text-white rounded-lg hover:bg-[#15243d] transition-colors text-sm sm:text-base">
+                <button
+                  onClick={handleCreateQuote}
+                  className="order-1 sm:order-2 px-6 py-3 sm:py-2 bg-[#1A2B4C] text-white rounded-lg hover:bg-[#15243d] transition-colors text-sm sm:text-base"
+                >
                   Submit Quote
                 </button>
               </div>
