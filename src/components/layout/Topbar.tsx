@@ -47,7 +47,7 @@ export function Topbar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
             {/* use your own avatar / logo here */}
             <img
-              src="/images/profile.png"
+              src="https://a0.anyrgb.com/pngimg/1140/162/user-profile-login-avatar-heroes-user-blue-icons-circle-symbol-logo.png"
               alt="User"
               className="h-9 w-9 rounded-full"
             />

@@ -16,19 +16,23 @@ import {
   UserPen,
   UsersIcon,
 } from "lucide-react";
-import QuotesCard from "../../../components/quotes/QuotesCard";
+import QuotesCard from "../../../components/jobs/quotes/QuotesCard";
 import { useEffect, useState } from "react";
 import { AppShell } from "../../../components/layout/AppShell";
 import { getTokens } from "../../../lib/apiClient";
 import axios from "axios";
 import { InnerSidebar } from "../../../components/layout/InnerSidebar";
-import AllJobs from "../../../components/quotes/AllJobs";
-import AllQuotes from "../../../components/quotes/AllQuotes";
-import CreateQuotes from "../../../components/quotes/CreateQuotes";
+import AllJobs from "../../../components/jobs/jobs/AllJobs";
+import AllQuotes from "../../../components/jobs/quotes/AllQuotes";
+import CreateQuotes from "../../../components/jobs/quotes/CreateQuotes";
+import JobsCard from "../../../components/jobs/jobs/JobsCard";
 
 const page = () => {
   const [showCard, setShowCard] = useState(false);
   const [activeElement, setActiveElement] = useState("job");
+  const [date, setDate] = useState(new Date());
+  console.log(date.toLocaleTimeString());
+  console.log(date.toDateString());
 
   const handleActiveElement = (id) => {
     setActiveElement(id);
@@ -50,9 +54,16 @@ const page = () => {
   const iconItems = [
     { id: "create", label: "Create Quotes", icon: NotebookPen },
     { id: "quote", label: "All Quotes", icon: NotebookTabs },
-    { id: "job", label: "All Jobes", icon: UserPen },
+    { id: "job", label: "All Jobs", icon: UserPen },
   ];
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDate(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
   return (
     <AppShell>
       <div className="w-full flex flex-row gap-2 h-full">
@@ -82,13 +93,20 @@ const page = () => {
                       <div className="flex items-center gap-1">
                         <Clock8 className="w-4 h-4 text-slate-800" />
                         <span className="font-semibold text-slate-800">
-                          11:11:17 am
+                          {date.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <CalendarDays className="w-4 h-4 text-slate-800" />
                         <span className="font-semibold text-slate-800">
-                          Monday, Dec 1
+                          {date.toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </span>
                       </div>
                     </div>
@@ -168,14 +186,18 @@ const page = () => {
                 </div>
               </div>
 
-              {showCard && (
+              {showCard && activeElement === "quote" ? (
                 <QuotesCard
                   setShow={setShowCard}
                   show={showCard}
-                  quotes={
-                    activeElement === "job" ? ["Add Jobs"] : ["Add Quotes"]
-                  }
+                  quot={["Add Quotes"]}
                   className="transition-discrete"
+                />
+              ) : (
+                <JobsCard
+                  setShow={setShowCard}
+                  show={showCard}
+                  quot={["Add Jobs"]}
                 />
               )}
 
