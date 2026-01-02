@@ -1,13 +1,22 @@
+"use client";
 import axios from "axios";
 import { CalendarDays, Clock8, Search } from "lucide-react";
 import { getTokens } from "../../../lib/apiClient";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { CustomerContext } from "../../../context/CustomerContext";
+import { QuotesContext } from "../../../context/QuotesContext";
 
 const CreateQuotes = () => {
   const token = getTokens().access;
+  const { fetchQuotes } = useContext(QuotesContext);
   const [date, setDate] = useState(new Date());
+  const { client } = useContext(CustomerContext);
+  const [customer, setCustomer] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState([]);
+  const [filterCustomer, setFilterCustomer] = useState([]);
   const [quotes, setQuotes] = useState({
-    client_id: 1,
+    client_id: Number(selectedCustomer?.id),
     branch_id: 1,
     service_package_id: 1,
     title: "",
@@ -53,55 +62,34 @@ const CreateQuotes = () => {
   };
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setDate(new Date());
-    }, 60000);
+    const filteredClient = client.filter((item) => {
+      const fullName = `${item.first_name} ${item.last_name}`.toLowerCase();
+      return fullName.includes(customer.toLowerCase());
+    });
 
-    return () => clearInterval(timer);
-  }, []);
+    setFilterCustomer(filteredClient);
+  }, [client, customer]);
+
+  useEffect(() => {
+    if (selectedCustomer?.id) {
+      setQuotes((prev) => ({
+        ...prev,
+        client_id: Number(selectedCustomer.id),
+        // assigned_to: Number(selectedCustomer.id),
+        // service_package_id: Number(selectedCustomer.id),
+      }));
+    }
+  }, [selectedCustomer]);
 
   const handleCreateQuote = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await axios.post(
-        "http://abc.mrl.local/api/v1/quotes",
-        {
-          client_id: 2,
-          branch_id: 2,
-          service_package_id: 2,
-          title: "Office Relocation Quote",
-          description: "Small office relocation within Melbourne",
-          service_type: "general",
-          service_data: {
-            pickup_unit: "Suite 405",
-            pickup_street_address: "Collins Street",
-            pickup_suburb: "Melbourne CBD",
-            pickup_state: "VIC",
-            pickup_postal_code: "3000",
-            pickup_instructions: "Building access via rear loading dock",
-            dropoff_unit: "Unit 18",
-            dropoff_street_address: "Chapel Street",
-            dropoff_suburb: "South Yarra",
-            dropoff_state: "VIC",
-            dropoff_postal_code: "3141",
-          },
-          assigned_to: 3,
-          tax_rate: 10,
-          discount_amount: 75,
-          valid_until: "2026-01-15",
-          internal_notes: "IT equipment present, pack monitors separately",
-          client_notes: "Preferred move after 10 AM",
+      const response = await axios.post(`${API_URL}/quotes`, quotes, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Quote created:", response.data);
+      });
+      await fetchQuotes();
     } catch (err) {
       console.error(
         "Error creating quote:",
@@ -109,6 +97,14 @@ const CreateQuotes = () => {
       );
     }
   };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDate(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <section className="bg-white rounded-2xl shadow-lg h-auto w-full  py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
@@ -150,10 +146,76 @@ const CreateQuotes = () => {
         <hr className="mt-4 border-gray-300" />
 
         <form onSubmit={handleCreateQuote}>
-          <div className=" mt-6 lg:mt-10 w-full  p-8">
-            {/* RIGHT column */}
-            <div className="w-full ">
-              <div className="flex flex-col md:flex-row lg:flex-row  gap-6 lg:gap-10 ">
+          <div className="mt-6 lg:mt-10 w-full p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
+            {/* LEFT COLUMN - Customer Details */}
+            <div className="flex flex-col gap-6 bg-blue-50 p-4 sm:p-6 rounded-xl lg:w-1/3 xl:w-96 h-160">
+              <h2 className="font-bold bg-[#17466933] text-2xl text-[#1A2B4C] p-4 rounded-xl  ">
+                Customer Details
+              </h2>
+
+              <div className="flex flex-col relative w-full">
+                <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                  Search Client
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search Client"
+                  value={customer}
+                  onChange={(event) => setCustomer(event.target.value)}
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1"
+                />
+                {customer.trim() && (
+                  <ul className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                    {filterCustomer.length > 0
+                      ? filterCustomer.map((item) => (
+                          <li
+                            key={item._id}
+                            className="px-4 py-2 text-sm cursor-pointer hover:bg-emerald-100"
+                            onClick={() => {
+                              setSelectedCustomer(item);
+                              setCustomer(
+                                `${item.first_name} ${item.last_name}`
+                              );
+                              setFilterCustomer([]);
+                            }}
+                          >
+                            {item.first_name} {item.last_name} {item.id}
+                          </li>
+                        ))
+                      : ""}
+                  </ul>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                  Client ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="Client ID"
+                  name="client_id"
+                  value={customer ? selectedCustomer?.id || "" : ""}
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Phone Number"
+                  name="title"
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
+                />
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN - Form Fields */}
+            <div className="flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="flex flex-col">
                   <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
                     Title
@@ -165,9 +227,10 @@ const CreateQuotes = () => {
                     required
                     value={quotes.title}
                     onChange={handleChange}
-                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm lg:w-90"
+                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                   />
                 </div>
+
                 <div className="flex flex-col">
                   <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
                     Service Type
@@ -179,11 +242,11 @@ const CreateQuotes = () => {
                     placeholder="Service Type"
                     value={quotes.service_type}
                     onChange={handleChange}
-                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm lg:w-90"
+                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                   />
                 </div>
 
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2 lg:col-span-1">
                   <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
                     Description
                   </label>
@@ -194,18 +257,20 @@ const CreateQuotes = () => {
                     value={quotes.description}
                     onChange={handleChange}
                     placeholder="Description"
-                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm  lg:w-90"
-                  ></input>
+                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 mt-6">
+
+              {/* Address Sections */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-6">
                 <div>
                   <h3 className="font-semibold text-[#1A2B4C] mb-3 text-sm sm:text-base">
                     Pick up Address
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Street
                       </label>
                       <input
@@ -215,11 +280,11 @@ const CreateQuotes = () => {
                         value={quotes.service_data.pickup_street_address}
                         onChange={handleChange}
                         placeholder="Street"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Suburb
                       </label>
                       <input
@@ -229,23 +294,23 @@ const CreateQuotes = () => {
                         value={quotes.service_data.pickup_suburb}
                         onChange={handleChange}
                         placeholder="Suburb"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         State
                       </label>
                       <select
                         name="pickup_state"
                         value={quotes.service_data.pickup_state}
                         onChange={handleChange}
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       >
-                        <option defaultValue="">Select State</option>
+                        <option value="">Select State</option>
                         <option value="NSW">New South Wales</option>
                         <option value="SA">South Australia</option>
                         <option value="NT">Northern Territory</option>
@@ -253,7 +318,7 @@ const CreateQuotes = () => {
                       </select>
                     </div>
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Postcode
                       </label>
                       <input
@@ -263,14 +328,14 @@ const CreateQuotes = () => {
                         value={quotes.service_data.pickup_postal_code}
                         onChange={handleChange}
                         placeholder="Postcode"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Pickup unit
                       </label>
                       <input
@@ -280,11 +345,11 @@ const CreateQuotes = () => {
                         value={quotes.service_data.pickup_unit}
                         onChange={handleChange}
                         placeholder="Pickup Unit"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Pickup Instructions
                       </label>
                       <input
@@ -294,19 +359,20 @@ const CreateQuotes = () => {
                         value={quotes.service_data.pickup_instructions}
                         onChange={handleChange}
                         id="pickup_instructions"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                   </div>
                 </div>
 
+                {/* Drop off Address */}
                 <div>
                   <h3 className="font-semibold text-[#1A2B4C] mb-3 text-sm sm:text-base">
                     Drop off Address
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Street
                       </label>
                       <input
@@ -316,11 +382,11 @@ const CreateQuotes = () => {
                         value={quotes.service_data.dropoff_street_address}
                         onChange={handleChange}
                         placeholder="Street"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Suburb
                       </label>
                       <input
@@ -330,14 +396,14 @@ const CreateQuotes = () => {
                         value={quotes.service_data.dropoff_suburb}
                         onChange={handleChange}
                         placeholder="Suburb"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         State
                       </label>
                       <select
@@ -345,9 +411,9 @@ const CreateQuotes = () => {
                         required
                         value={quotes.service_data.dropoff_state}
                         onChange={handleChange}
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       >
-                        <option defaultValue="">Select State</option>
+                        <option value="">Select State</option>
                         <option value="NSW">New South Wales</option>
                         <option value="SA">South Australia</option>
                         <option value="NT">Northern Territory</option>
@@ -355,7 +421,7 @@ const CreateQuotes = () => {
                       </select>
                     </div>
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
                         Postcode
                       </label>
                       <input
@@ -365,15 +431,15 @@ const CreateQuotes = () => {
                         value={quotes.service_data.dropoff_postal_code}
                         onChange={handleChange}
                         placeholder="Postcode"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                     <div className="flex flex-col">
-                      <label className="mb-1 text-md text-slate-700">
-                        Drop of unit
+                      <label className="mb-1 text-sm sm:text-md text-slate-700">
+                        Drop off unit
                       </label>
                       <input
                         type="text"
@@ -381,18 +447,17 @@ const CreateQuotes = () => {
                         required
                         value={quotes.service_data.dropoff_unit}
                         onChange={handleChange}
-                        placeholder="Drop of Unit"
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                        placeholder="Drop off Unit"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-6">
                 <div>
                   <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
-                    Internel Notes
+                    Internal Notes
                   </label>
                   <textarea
                     name="internal_notes"
@@ -400,13 +465,13 @@ const CreateQuotes = () => {
                     required
                     value={quotes.internal_notes}
                     onChange={handleChange}
-                    placeholder="Internel Notes"
-                    className="w-full h-32 sm:h-24 border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                    placeholder="Internal Notes"
+                    className="w-full h-32 sm:h-28 lg:h-24 border border-gray-300 rounded-lg px-4 py-2 text-sm resize-y"
                   />
                 </div>
                 <div>
                   <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
-                    Clients Notes
+                    Client Notes
                   </label>
                   <textarea
                     name="client_notes"
@@ -415,11 +480,11 @@ const CreateQuotes = () => {
                     value={quotes.client_notes}
                     onChange={handleChange}
                     placeholder="Add any special handling notes"
-                    className="w-full h-32 sm:h-24 border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                    className="w-full h-32 sm:h-28 lg:h-24 border border-gray-300 rounded-lg px-4 py-2 text-sm resize-y"
                   />
                 </div>
               </div>
-              <div>
+              <div className="mt-6 max-w-xs">
                 <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
                   Valid Until
                 </label>
@@ -429,18 +494,20 @@ const CreateQuotes = () => {
                   required
                   value={quotes.valid_until}
                   onChange={handleChange}
-                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full"
                 />
               </div>
-
               <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mt-8 lg:mt-10">
-                <button className="order-2 sm:order-1 border border-gray-400 rounded-lg px-6 py-3 sm:py-2 bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base text-slate-800 font-semibold">
+                <button
+                  type="button"
+                  className="border border-gray-400 rounded-lg px-6 py-3 sm:py-2 bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base text-slate-800 font-semibold w-full sm:w-auto"
+                >
                   Save as Draft
                 </button>
 
                 <button
                   type="submit"
-                  className="order-1 sm:order-2 px-6 py-3 sm:py-2 bg-[#1A2B4C] text-white rounded-lg hover:bg-[#15243d] transition-colors text-sm sm:text-base cursor-pointer"
+                  className="px-6 py-3 sm:py-2 bg-[#1A2B4C] text-white rounded-lg hover:bg-[#15243d] transition-colors text-sm sm:text-base cursor-pointer w-full sm:w-auto"
                 >
                   Submit Quote
                 </button>

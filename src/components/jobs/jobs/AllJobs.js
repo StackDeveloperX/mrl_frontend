@@ -4,28 +4,25 @@ import { useContext, useEffect, useState } from "react";
 import { getTokens } from "../../../lib/apiClient";
 import axios from "axios";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
-import QuotesCard from "../quotes/QuotesCard";
 import JobsCard from "./JobsCard";
 import { JobsContext } from "../../../context/JobsContext";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const AllJobs = () => {
-  const { jobs, fetchJobs,loading,error } = useContext(JobsContext);
+  const { jobs, fetchJobs, loading, error } = useContext(JobsContext);
   const token = getTokens().access;
   const [showCard, setShowCard] = useState(false);
-  const [popupOpen, setPopupOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState(null);
+  const [deleteJob, setDeleteJob] = useState(null);
 
   const handleDeleteJob = async (jobId) => {
     try {
-      const response = await axios.delete(
-        `http://abc.mrl.local/api/v1/jobs/${jobId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token} `,
-          },
-        }
-      );
+      const response = await axios.delete(`${API_URL}/jobs/${jobId}`, {
+        headers: {
+          Authorization: `Bearer ${token} `,
+        },
+      });
       console.log("Job deleted successfully", response.data);
       await fetchJobs();
     } catch (error) {
@@ -112,40 +109,10 @@ const AllJobs = () => {
                       />
                       <Trash2
                         onClick={() => {
-                          setPopupOpen(true);
+                          setDeleteJob(job.id);
                         }}
                         className="w-6 h-6 text-red-500 hover:text-red-700 cursor-pointer ml-2"
                       />
-                      {popupOpen && (
-                        <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
-                          <div className="bg-white p-6 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-4">
-                              Confirm Deletion
-                            </h2>
-                            <p className="mb-4">
-                              Are you sure you want to delete this job?
-                            </p>
-                            <div className="flex justify-end gap-4">
-                              <button
-                                onClick={() => setPopupOpen(false)}
-                                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleDeleteJob(job.id);
-                                  setPopupOpen(false);
-                                }}
-                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                              >
-                                {" "}
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </span>
                   </td>
                 </tr>
@@ -154,6 +121,31 @@ const AllJobs = () => {
           )}
         </tbody>
       </table>
+      {deleteJob && (
+        <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Confirm Deletion</h2>
+            <p className="mb-4">Are you sure you want to delete this job?</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setDeleteJob(null)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteJob(deleteJob);
+                  setDeleteJob(null);
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

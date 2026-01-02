@@ -1,10 +1,11 @@
 "use client";
-
 import { useContext, useEffect, useRef, useState } from "react";
 import { X, Search } from "lucide-react";
 import axios from "axios";
 import { getTokens } from "../../../lib/apiClient";
 import { JobsContext } from "../../../context/JobsContext";
+import { QuotesContext } from "../../../context/QuotesContext";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function JobsCard({
   show,
   setShow,
@@ -13,18 +14,21 @@ export default function JobsCard({
   isEdit,
 }) {
   const { fetchJobs } = useContext(JobsContext);
+  const { quotes } = useContext(QuotesContext);
+  const [searchClient, setSearchClient] = useState("");
+  const [filterClient, setFilterClient] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState([]);
   const [mounted, setMounted] = useState(false); // actually mounted in DOM
   const [visible, setVisible] = useState(false); // controls enter/exit animation
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
   const previouslyFocused = useRef(null);
   const token = getTokens().access;
-
   const [jobs, setJobs] = useState({
-    quote_id: 1,
-    client_id: 1,
-    branch_id: 1,
-    service_package_id: 1,
+    quote_id: Number(selectedCustomer.id),
+    client_id: Number(selectedCustomer.client_id),
+    branch_id: Number(selectedCustomer.branch_id),
+    service_package_id: Number(selectedCustomer.service_package_id),
     title: "",
     description: "",
     priority: "low",
@@ -44,7 +48,7 @@ export default function JobsCard({
       setJobs({
         title: selectedJobs.title,
         description: selectedJobs.description,
-        stage: "scheduled",
+        stage: selectedJobs.stage,
         priority: "low",
         scheduled_start: selectedJobs.scheduled_start,
         scheduled_end: selectedJobs.scheduled_end,
@@ -66,10 +70,10 @@ export default function JobsCard({
     if (!isEdit) {
       // reset form for CREATE
       setJobs({
-        quote_id: 1,
-        client_id: 1,
-        branch_id: 1,
-        service_package_id: 1,
+        quote_id: Number(selectedCustomer.id),
+        client_id: Number(selectedCustomer.client_id),
+        branch_id: Number(selectedCustomer.branch_id),
+        service_package_id: Number(selectedCustomer.service_package_id),
         title: "",
         description: "",
         priority: "low",
@@ -86,8 +90,6 @@ export default function JobsCard({
     }
   }, [isEdit, selectedJobs]);
 
-  console.log("jobs", jobs);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setJobs((prev) => ({
@@ -95,6 +97,26 @@ export default function JobsCard({
       [name]: value,
     }));
   };
+
+  useEffect(() => {
+    const filterQuotes = quotes.filter((items) => {
+      const clientName = `${items.client_first_name}`.toLowerCase();
+      return clientName.includes(searchClient.toLowerCase());
+    });
+    setFilterClient(filterQuotes);
+  }, [quotes, searchClient]);
+
+  useEffect(() => {
+    if (selectedCustomer?.id) {
+      setJobs((prev) => ({
+        ...prev,
+        quote_id: Number(selectedCustomer.id),
+        client_id: Number(selectedCustomer.client_id),
+        branch_id: Number(selectedCustomer.branch_id),
+        service_package_id: Number(selectedCustomer.service_package_id),
+      }));
+    }
+  }, [selectedCustomer]);
 
   const handleCreateJobs = async (e) => {
     e.preventDefault();
@@ -105,15 +127,11 @@ export default function JobsCard({
 
     try {
       if (isEdit) {
-        await axios.put(
-          `http://abc.mrl.local/api/v1/jobs/${selectedJobs.id}`,
-          jobs,
-          {
-            headers: {
-              Authorization: `Bearer ${token} `,
-            },
-          }
-        );
+        await axios.put(`${API_URL}/jobs/${selectedJobs.id}`, jobs, {
+          headers: {
+            Authorization: `Bearer ${token} `,
+          },
+        });
         await fetchJobs();
         alert("job updated");
       } else {
@@ -245,13 +263,143 @@ export default function JobsCard({
             <div className="mt-4 md:mt-6 lg:mt-2 w-full p-4 md:p-6 lg:p-8">
               <div className="w-full">
                 <div className="flex flex-col lg:flex-col gap-4 md:gap-6 lg:gap-6 mb-6 md:mb-6">
+                  {quot[0] === "Add Jobs" && (
+                    <div>
+                      <div className="relative flex-1 flex flex-col mb-4">
+                        <label
+                          htmlFor="client-search"
+                          className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base"
+                        >
+                          Search Client
+                        </label>
+
+                        <div className="relative">
+                          <input
+                            id="client-search"
+                            type="text"
+                            placeholder="Search by client name..."
+                            value={searchClient}
+                            onChange={(event) =>
+                              setSearchClient(event.target.value)
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 md:py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            aria-label="Search clients"
+                            aria-expanded={
+                              searchClient.trim() && filterClient.length > 0
+                            }
+                            aria-controls="client-results"
+                          />
+
+                          {searchClient.trim() && (
+                            <div
+                              id="client-results"
+                              className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                              role="listbox"
+                              aria-label="Search results"
+                            >
+                              {filterClient.length > 0 ? (
+                                <ul className="max-h-48 overflow-y-auto">
+                                  {filterClient.map((item) => (
+                                    <li
+                                      key={item.id}
+                                      className="px-4 py-3 text-sm cursor-pointer hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+                                      onClick={() => {
+                                        setSelectedCustomer(item);
+                                        setSearchClient(
+                                          `${item.client_first_name}`
+                                        );
+                                        setFilterClient([]);
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium text-gray-800">
+                                          {item.client_first_name} {item.id}
+                                        </span>
+                                      </div>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                ""
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-row gap-6 mb-4">
+                        <div className="flex-1 flex flex-col">
+                          <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                            Quote ID
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Search Client"
+                            name="id"
+                            required
+                            value={searchClient ? selectedCustomer?.id : ""}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 md:py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="flex-1 flex flex-col">
+                          <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                            Client ID
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Search Client"
+                            name="client_id"
+                            required
+                            value={
+                              searchClient ? selectedCustomer?.client_id : ""
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 md:py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-row gap-6">
+                        <div className="flex-1 flex flex-col">
+                          <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                            Branch ID
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Search Client"
+                            name="branch_id"
+                            required
+                            value={
+                              searchClient ? selectedCustomer?.branch_id : ""
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 md:py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="flex-1 flex flex-col">
+                          <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
+                            Service Package ID
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Search Client"
+                            name="service_package_id"
+                            required
+                            value={
+                              searchClient
+                                ? selectedCustomer?.service_package_id
+                                : ""
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 md:py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex-1 flex flex-col">
                     <label className="block font-semibold text-[#1A2B4C] mb-2 text-sm sm:text-base">
                       Title
                     </label>
                     <input
                       type="text"
-                      placeholder="Enter title"
+                      placeholder="Title"
                       name="title"
                       required
                       value={jobs.title}

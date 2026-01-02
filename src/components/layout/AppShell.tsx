@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main body: sidebar + content */}
       <div className="flex flex-row">
         <Sidebar />
-        <main className="flex-1 bg-[#F5F7FA] px-8 py-6 w-full">
+        <main className="flex-1 bg-[#ddffff] px-8 py-6 w-full">
           {children}
         </main>
       </div>

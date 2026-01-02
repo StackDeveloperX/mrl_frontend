@@ -3,6 +3,7 @@
 import { getTokens } from "@/lib/apiClient";
 import axios from "axios";
 import { createContext, useEffect, useState } from "react";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const QuotesContext = createContext();
 
@@ -15,12 +16,12 @@ export const QuotesProvider = ({ children }) => {
     setError(null);
     setLoading(true);
     try {
-      const response = await axios.get("http://abc.mrl.local/api/v1/quotes", {
+      const response = await axios.get(`${API_URL}/quotes`, {
         headers: {
           Authorization: `Bearer ${token} `,
         },
       });
-      console.log("quotes", response.data);
+     // console.log("quotes", response.data);
 
       setQuotes(response.data.data);
     } catch (error) {

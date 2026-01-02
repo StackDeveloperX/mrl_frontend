@@ -4,23 +4,17 @@ import {
   CirclePlus,
   Clock8,
   Funnel,
-  KeyRound,
   MailOpen,
   NotebookPen,
   NotebookTabs,
   NotepadText,
   Search,
-  Shield,
   User,
-  UserCog,
   UserPen,
-  UsersIcon,
 } from "lucide-react";
 import QuotesCard from "../../../components/jobs/quotes/QuotesCard";
 import { useEffect, useState } from "react";
 import { AppShell } from "../../../components/layout/AppShell";
-import { getTokens } from "../../../lib/apiClient";
-import axios from "axios";
 import { InnerSidebar } from "../../../components/layout/InnerSidebar";
 import AllJobs from "../../../components/jobs/jobs/AllJobs";
 import AllQuotes from "../../../components/jobs/quotes/AllQuotes";
@@ -31,8 +25,6 @@ const page = () => {
   const [showCard, setShowCard] = useState(false);
   const [activeElement, setActiveElement] = useState("job");
   const [date, setDate] = useState(new Date());
-  console.log(date.toLocaleTimeString());
-  console.log(date.toDateString());
 
   const handleActiveElement = (id) => {
     setActiveElement(id);
@@ -61,7 +53,6 @@ const page = () => {
     const timer = setInterval(() => {
       setDate(new Date());
     }, 60000);
-
     return () => clearInterval(timer);
   }, []);
   return (

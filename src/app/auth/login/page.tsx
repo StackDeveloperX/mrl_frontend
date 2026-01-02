@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Phone, Lock, Loader2 } from "lucide-react";
 import { authApi } from "@/apis/authApi";
 import axios from "axios";
+import { getTokens } from "@/lib/apiClient";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
   const router = useRouter();
-
+  const token = getTokens().access;
   const [mobileOrEmail, setMobileOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +56,29 @@ export default function LoginPage() {
     if (isLoading) return;
     router.push("/auth/emaillogin");
   };
+
+  const refreshTokens = async () => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/auth/refresh`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("new tokens", response);
+    } catch (error) {
+      console.log("response refresh tokens", error);
+    }
+  };
+
+  // useEffect(() => {
+  //   if (!token) {
+  //     refreshTokens();
+  //   }
+  // }, []);
 
   return (
     <div className="relative min-h-screen bg-[#F5F7FA] text-mrl-primary">
@@ -173,6 +198,8 @@ export default function LoginPage() {
                   "Login"
                 )}
               </button>
+
+              {/* <button className="bg-amber-200" onClick={refreshTokens}>button</button> */}
 
               {/* OR separator */}
               <div className="flex items-center gap-3 text-[11px] text-mrl-muted">

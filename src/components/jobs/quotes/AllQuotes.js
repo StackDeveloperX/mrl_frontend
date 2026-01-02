@@ -1,31 +1,27 @@
+"use client";
 import axios from "axios";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { getTokens } from "../../../lib/apiClient";
 import { File, Loader2, Pencil, SendHorizontal, Trash2 } from "lucide-react";
 import QuotesCard from "./QuotesCard";
 import { QuotesContext } from "../../../context/QuotesContext";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const AllQuotes = () => {
-  const { quotes, loading, error,fetchQuotes } = useContext(QuotesContext);
-
+  const { quotes, loading, error, fetchQuotes } = useContext(QuotesContext);
   const token = getTokens().access;
-  const [popupOpen, setPopupOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
-
-  //console.log("token", token);
+  const [deleteQuote, setDeleteQuote] = useState(null);
 
   const handleDeleteQuote = async (quoteId) => {
     try {
-      const response = await axios.delete(
-        `http://abc.mrl.local/api/v1/quotes/${quoteId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token} `,
-          },
-        }
-      );
+      const response = await axios.delete(`${API_URL}/quotes/${quoteId}`, {
+        headers: {
+          Authorization: `Bearer ${token} `,
+        },
+      });
       await fetchQuotes();
       console.log("Quote deleted successfully", response.data);
     } catch (error) {
@@ -88,11 +84,14 @@ const AllQuotes = () => {
                 >
                   <td className="px-4 py-4"></td>
                   <th className="px-6 py-4 font-medium whitespace-nowrap">
-                    {quote?.quote_number}
+                    {quote?.id}
                   </th>
                   <td className="px-6 py-4">
                     {" "}
-                    <a href="" className="underline">
+                    <a
+                      href=""
+                      className="underline decoration-blue-200 decoration-1"
+                    >
                       {" "}
                       {quote?.client_first_name}
                     </a>
@@ -125,40 +124,10 @@ const AllQuotes = () => {
                       />
                       <Trash2
                         onClick={() => {
-                          setPopupOpen(true);
+                          setDeleteQuote(quote.id);
                         }}
                         className="w-6 h-6 text-red-500 hover:text-red-700 cursor-pointer ml-2"
                       />
-                      {popupOpen && (
-                        <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
-                          <div className="bg-white p-6 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-4">
-                              Confirm Deletion
-                            </h2>
-                            <p className="mb-4">
-                              Are you sure you want to delete this quote?
-                            </p>
-                            <div className="flex justify-end gap-4">
-                              <button
-                                onClick={() => setPopupOpen(false)}
-                                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleDeleteQuote(quote?.id);
-                                  setPopupOpen(false);
-                                }}
-                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                              >
-                                {" "}
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </span>
                   </td>
                 </tr>
@@ -167,6 +136,32 @@ const AllQuotes = () => {
           )}
         </tbody>
       </table>
+      {deleteQuote && (
+        <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Confirm Deletion</h2>
+            <p className="mb-4">Are you sure you want to delete this quote?</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setDeleteQuote(null)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteQuote(deleteQuote);
+                  setDeleteQuote(null);
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                {" "}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
